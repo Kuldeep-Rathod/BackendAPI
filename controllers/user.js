@@ -1,66 +1,35 @@
 import { User } from "../models/user.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-export const getAllUsers = async (req, res) => {
-    const users =  await User.find({});
+export const getAllUsers = async (req, res) => {};
 
-    // console.log(req.query);
-
-    res.json({
-        success: true,
-        users,
-    });
-}
+export const login = async (req, res) => {};
 
 export const register = async (req, res) => {
+  const { name, email, password } = req.body;
 
-    const {name, email, password} = req.body; 
+  let user = await User.findOne({ email });
 
-    await User.create({
-        name,
-        email,
-        password,
+  if (user)
+    return res.status(404).json({
+      success: false,
+      message: "User Already Exist",
     });
 
-    res.status(201).cookie("tempi", "lol").json({
-        success:true,
-        message:"registered success",
-    });
-}
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-export const specialFunc = (req, res) => {
-    res.json({
-        success: true,
-        message:"just joking"
-    });
+  user = await User.create({ name, email, password: hashedPassword });
+
+  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+
+  res.status(201).cookie("token", token, {
+    httpOnly:true,
+    maxAge: 15 * 60 * 1000,
+  }).json({
+    success: true,
+    message: "Registered Successfully",
+  });
 };
 
-export const findUserById = async (req, res) => {
-    const { id } = req.body;
-    const user = await User.findById(id);
-
-    res.json({
-        success: true,
-        user,
-    });
-};
-
-export const updateUser = async (req, res) => {
-    const { id } = req.body;
-    const user = await User.findById(id);
-
-    res.json({
-        success: true,
-        message: "updated",
-    });
-};
-
-export const deleteUser = async (req, res) => {
-    const { id } = req.body;
-    const user = await User.findById(id);
-
-
-    res.json({
-        success: true,
-        message: "deleted",
-    });
-};
+export const findUserById = async (req, res) => {};
