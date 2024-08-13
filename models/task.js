@@ -13,7 +13,7 @@ const schema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    user:{
+    user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
@@ -21,7 +21,7 @@ const schema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-    }
+    },
 });
 
 export const Task = mongoose.model("Task", schema);
