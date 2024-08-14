@@ -2,44 +2,43 @@ import { User } from "../models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendCookie } from "../utils/features.js";
-
-export const getAllUsers = async (req, res) => {};
+import errorHandler from "../middlewares/error.js";
 
 export const login = async (req, res) => {
-    const { email, password } = req.body;
+    try {
+        const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select("+password");
-    if (!user)
-        return res.status(404).json({
-            success: false,
-            message: "Invalid Email or Password",
-        });
+        const user = await User.findOne({ email }).select("+password");
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-        return res.status(404).json({
-            success: false,
-            message: "Invalid Email or Password",
-        });
+        if (!user)
+            return next(new errorHandler("Invalid Email or Password", 400));
 
-    sendCookie(user, res, `Welcome back, ${user.name}`, 200);
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch)
+            return next(new errorHandler("Invalid Email or Password", 400));
+
+        sendCookie(user, res, `Welcome back, ${user.name}`, 200);
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const register = async (req, res) => {
-    const { name, email, password } = req.body;
+    try {
+        const { name, email, password } = req.body;
 
-    let user = await User.findOne({ email });
-    if (user)
-        return res.status(404).json({
-            success: false,
-            message: "User Already Exist",
-        });
+        let user = await User.findOne({ email });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+        if (user) return next(new errorHandler("User Already Exist", 400));
 
-    user = await User.create({ name, email, password: hashedPassword });
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-    sendCookie(user, res, "Registered Successfully", 201);
+        user = await User.create({ name, email, password: hashedPassword });
+
+        sendCookie(user, res, "Registered Successfully", 201);
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getMyProfile = async (req, res) => {
@@ -51,7 +50,11 @@ export const getMyProfile = async (req, res) => {
 
 export const logout = async (req, res) => {
     res.status(200)
-        .cookie("token", "", { expires: new Date(Date.now()) })
+        .cookie("token", "", {
+            expires: new Date(Date.now()),
+            sameSite: process.env.NODE_ENV === "Development" ? "lax" : "none",
+            secure: process.env.NODE_ENV === "Development" ? false : true,
+        })
         .json({
             success: true,
             user: req.user,
