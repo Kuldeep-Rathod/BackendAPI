@@ -13,5 +13,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
 router.get("/profile", isAuthenticated, getMyProfile);
+//router.get("/pro", ok);
 
 export default router;
